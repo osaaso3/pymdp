@@ -7,10 +7,6 @@ setuptools.setup(
     license="Apache 2.0",
     url="https://github.com/infer-actively/pymdp",
     packages=[
-        "pymdp",
-        "pymdp.core",
-        "pymdp.distributions",
-        "pymdp.agent",
-        "pymdp.envs",
+        "pymdp"
     ],
 )
