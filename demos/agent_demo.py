@@ -4,6 +4,7 @@ import numpy as np
 from pymdp import utils, maths
 from pymdp.agent import Agent
 
+
 def construct_A(num_states, num_obs):
     A = utils.obj_array_zeros([[o] + num_states for o in num_obs])
     A[0][:, :, 0] = np.ones((num_obs[0], num_states[0])) / num_obs[0]

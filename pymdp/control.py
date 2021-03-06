@@ -60,7 +60,7 @@ def get_utility(qo_pi, C):
     for t in range(num_steps):
         for modality in range(num_modalities):
             lnC = np.log(softmax(C[modality][:, np.newaxis]) + 1e-16)
-            utility = utility + qo_pi[t][modality].dot(lnC)
+            utility = utility + spm_dot(qo_pi[t][modality], lnC)
 
     return utility
 
