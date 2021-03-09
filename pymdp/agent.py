@@ -1,4 +1,5 @@
 import copy
+from collections import namedtuple
 
 from pymdp.utils import (
     obj_array,

@@ -51,7 +51,7 @@ if __name__ == "__main__":
     A = construct_A(num_states, num_obs)
     B = construct_B(num_states, num_factors, control_factors)
     C = construct_C(num_obs)
-    agent = Agent(A=A, B=B, C=C, control_factors=[1], infer_algo=InferType.MMP)
+    agent = Agent(A=A, B=B, C=C, control_factors=[1], policy_len=2, infer_algo=InferType.MMP)
 
     env_A = copy.deepcopy(A)
     env_B = copy.deepcopy(B)
@@ -63,8 +63,12 @@ if __name__ == "__main__":
         post_state = agent.infer_states(obs)
         post_policy = agent.infer_policies()
         action = agent.sample_action()
-        utils.print_obj_array(post_state, f"states")
-        utils.print_obj_array(post_policy, f"policies")
+        # utils.print_obj_array(post_state, f"states")
+        # utils.print_obj_array(post_policy, f"policies")
+
+        beliefs = utils.convert_to_namedtuple(post_state)
+        print(beliefs.policy[0])
+        print(beliefs.policy[1].time[1].factor[0])
 
         for f, s in enumerate(state):
             state[f] = maths.sample(env_B[f][:, s, action[f]])

@@ -1,4 +1,5 @@
 from enum import IntEnum
+
 import numpy as np
 
 from pymdp import utils
@@ -41,5 +42,4 @@ def infer_states(A, B, obs, prior=None):
         prior = utils.to_obj_array(prior)
 
     qs = fpi(A, B, obs, prior)
-
     return qs
