@@ -51,7 +51,7 @@ if __name__ == "__main__":
     A = construct_A(num_states, num_obs)
     B = construct_B(num_states, num_factors, control_factors)
     C = construct_C(num_obs)
-    agent = Agent(A=A, B=B, C=C, control_factors=[1], infer_algo=InferType.FPI)
+    agent = Agent(A=A, B=B, C=C, control_factors=[1], infer_algo=InferType.MMP)
 
     env_A = copy.deepcopy(A)
     env_B = copy.deepcopy(B)

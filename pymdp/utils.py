@@ -50,9 +50,11 @@ def print_obj_array(obj_array, name="", level=0):
     print(f"[{name}] (level {level}): shape {obj_array.shape}")
     for obj in obj_array:
         if is_obj_array(obj):
-            print_obj_array(obj, level + 1)
+            print_obj_array(obj, name=name, level=level + 1)
         else:
-            print(f"[{name}] (level {level}): values {obj}")
+            for i, el in enumerate(obj_array):
+                obj_array[i] = np.round(el.astype(float), 3)
+            print(f"[{name}] (level {level}): values {obj_array}")
 
 
 def rand_A_mat(num_obs, num_states):
@@ -124,7 +126,6 @@ def process_obs_seq(obs_seq, num_modalities, num_obs):
 
 def process_obs(obs, num_modalities, num_obs):
     """ Helper function for formatting observations """
-
     if isinstance(obs, (int, np.integer)):
         obs = onehot(obs, num_obs[0])
 
