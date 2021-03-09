@@ -147,3 +147,17 @@ def dot_likelihood(A, obs):
         ll = np.array([ll]).astype("float64")
 
     return ll
+
+
+def get_free_energy(qs, prior, likelihood=None):
+    num_factors = len(qs)
+    free_energy = 0
+    for factor in range(num_factors):
+        neg_ent = qs[factor].dot(np.log(qs[factor][:, np.newaxis] + 1e-16))
+        kl = -qs[factor].dot(prior[factor][:, np.newaxis])
+        free_energy += neg_ent + kl
+
+    if likelihood is not None:
+        accuracy = spm_dot(likelihood, qs)[0]
+        free_energy -= accuracy
+    return free_energy

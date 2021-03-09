@@ -21,6 +21,13 @@ def obj_array_uniform(shape_list):
     return arr
 
 
+def obj_array_rand(shape_list):
+    arr = obj_array(len(shape_list))
+    for i, shape in enumerate(shape_list):
+        arr[i] = np.random.rand(shape)
+    return arr
+
+
 def to_obj_array(arr):
     if is_obj_array(arr):
         return arr
@@ -37,6 +44,15 @@ def onehot(value, num_values):
     arr = np.zeros(num_values)
     arr[value] = 1.0
     return arr
+
+
+def print_obj_array(obj_array, name="", level=0):
+    print(f"[{name}] (level {level}): shape {obj_array.shape}")
+    for obj in obj_array:
+        if is_obj_array(obj):
+            print_obj_array(obj, level + 1)
+        else:
+            print(f"[{name}] (level {level}): values {obj}")
 
 
 def rand_A_mat(num_obs, num_states):

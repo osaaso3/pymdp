@@ -8,7 +8,7 @@ from pymdp.utils import (
     rand_D_mat,
     get_model_dimensions,
 )
-from pymdp.infer import infer_states_mmp, InferAlgoEnum
+from pymdp.infer import infer_states_mmp, infer_states, InferType
 from pymdp import control
 
 
@@ -24,7 +24,7 @@ class Agent:
         num_obs=None,
         num_control=None,
         control_factors=None,
-        infer_algo=InferAlgoEnum.MMP,
+        infer_algo=InferType.MMP,
         infer_len=1,
         policy_len=1,
     ):
@@ -62,7 +62,7 @@ class Agent:
         self.set_prior(self.D)
 
     def infer_states(self, obs):
-        if self.infer_algo == InferAlgoEnum.MMP:
+        if self.infer_algo == InferType.MMP:
             self.obs_seq.append(obs)
             if len(self.obs_seq) > self.infer_len:
                 self.obs_seq = self.obs_seq[: self.infer_len]
@@ -70,12 +70,20 @@ class Agent:
             res = infer_states_mmp(self.A, self.B, self.obs_seq, self.policies, prior=self.prior)
             self.state_beliefs, _ = res
 
+        elif self.infer_algo == InferType.FPI:
+            self.state_beliefs = infer_states(self.A, self.B, obs, prior=self.prior)
+
         return self.state_beliefs
 
     def infer_policies(self):
-        self.policy_beliefs, _ = control.update_policies_mmp(
-            self.state_beliefs, self.A, self.B, self.C, self.policies
-        )
+        if self.infer_algo == InferType.MMP:
+            self.policy_beliefs, _ = control.update_policies_mmp(
+                self.state_beliefs, self.A, self.B, self.C, self.policies
+            )
+        elif self.infer_algo == InferType.FPI:
+            self.policy_beliefs, _ = control.update_policies(
+                self.state_beliefs, self.A, self.B, self.C, self.policies
+            )
         return self.policy_beliefs
 
     def sample_action(self):

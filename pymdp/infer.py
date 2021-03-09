@@ -3,9 +3,10 @@ import numpy as np
 
 from pymdp import utils
 from pymdp.maths import get_joint_likelihood_seq
-from pymdp.algos import mmp
+from pymdp.algos import mmp, fpi
 
-class InferAlgoEnum(IntEnum):
+
+class InferType(IntEnum):
     FPI = 0
     MMP = 1
 
@@ -28,3 +29,17 @@ def infer_states_mmp(A, B, prev_obs, policies, prev_actions=None, prior=None):
         pi_qs_seq[p_idx], pi_vfe[p_idx] = mmp(ll_seq, B, policy, prev_actions, prior)
 
     return pi_qs_seq, pi_vfe
+
+
+def infer_states(A, B, obs, prior=None):
+    num_obs, _, num_modalities, _ = utils.get_model_dimensions(A, B)
+    A = utils.to_obj_array(A)
+    B = utils.to_obj_array(B)
+
+    obs = utils.process_obs(obs, num_modalities, num_obs)
+    if prior is not None:
+        prior = utils.to_obj_array(prior)
+
+    qs = fpi(A, B, obs, prior)
+
+    return qs

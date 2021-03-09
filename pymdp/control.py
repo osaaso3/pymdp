@@ -110,9 +110,9 @@ def sample_action(q_pi, policies, num_control):
             for f, a in enumerate(policy[t, :]):
                 marginals[f][a] = marginals[f][a] + q_pi[p]
 
-        marginals = norm_dist(marginals)
-        policy = sample(marginals)
-        return policy
+    marginals = norm_dist(marginals)
+    policy = sample(marginals)
+    return policy
 
 
 def construct_policies(num_states, num_control=None, policy_len=1, control_factors=None):

@@ -1,7 +1,7 @@
 import numpy as np
 
 from pymdp import utils
-from pymdp.maths import spm_norm, spm_log, spm_dot, softmax
+from pymdp.maths import spm_norm, spm_log, spm_dot, softmax, get_joint_likelihood, get_free_energy
 
 
 def mmp(
@@ -69,7 +69,7 @@ def mmp(
                     err -= err.mean()
                     ln_qs = ln_qs + tau * err
                     qs_seq[t][f] = softmax(ln_qs)
-                    
+
                     if (t == 0) or (t == (infer_len - 1)):
                         vfe = vfe + (0.5 * ln_qs.dot(0.5 * err))
                     else:
@@ -80,3 +80,43 @@ def mmp(
                     qs_seq[t][f] = softmax(lnA + lnB_past + lnB_future)
 
     return qs_seq, vfe
+
+
+def fpi(A, B, obs, prior=None, num_iter=10, df=1.0, tol=0.001):
+    _, num_states, _, num_factors = utils.get_model_dimensions(A, B)
+
+    ll = get_joint_likelihood(A, obs, num_states)
+    ll = np.log(ll + 1e-16)
+
+    qs = utils.obj_array(num_factors)
+    for factor in range(num_factors):
+        qs[factor] = np.ones(num_states[factor]) / num_states[factor]
+
+    if prior is None:
+        prior = np.empty(num_factors, dtype=object)
+        for factor in range(num_factors):
+            prior[factor] = np.log(np.ones(num_states[factor]) / num_states[factor] + 1e-16)
+
+    prev_vfe = get_free_energy(qs, prior)
+
+    if num_factors == 1:
+        ql = spm_dot(ll, qs, [0])
+        return softmax(ql + prior[0])
+    else:
+
+        itr = 0
+        while itr < num_iter and df >= tol:
+            vfe = 0
+            factor_orders = [range(num_factors), range((num_factors - 1), -1, -1)]
+
+            for order in factor_orders:
+                for factor in order:
+                    qL = spm_dot(ll, qs, [factor])
+                    qs[factor] = softmax(qL + prior[factor])
+
+            vfe = get_free_energy(qs, prior, likelihood=ll)
+            df = np.abs(prev_vfe - vfe)
+            prev_vfe = vfe
+            itr = itr + 1
+
+        return qs

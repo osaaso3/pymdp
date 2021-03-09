@@ -3,6 +3,7 @@ import numpy as np
 
 from pymdp import utils, maths
 from pymdp.agent import Agent
+from pymdp.infer import InferType
 
 
 def construct_A(num_states, num_obs):
@@ -32,7 +33,7 @@ def construct_B(num_states, num_factors, control_factors=[]):
     return B
 
 
-def construct_C(num_ob):
+def construct_C(num_obs):
     C = utils.obj_array_zeros([num_ob for num_ob in num_obs])
     C[1][0] = 1.0
     C[1][1] = -2.0
@@ -50,7 +51,7 @@ if __name__ == "__main__":
     A = construct_A(num_states, num_obs)
     B = construct_B(num_states, num_factors, control_factors)
     C = construct_C(num_obs)
-    agent = Agent(A=A, B=B, C=C, control_factors=[1])
+    agent = Agent(A=A, B=B, C=C, control_factors=[1], infer_algo=InferType.FPI)
 
     env_A = copy.deepcopy(A)
     env_B = copy.deepcopy(B)
@@ -62,3 +63,11 @@ if __name__ == "__main__":
         post_state = agent.infer_states(obs)
         post_policy = agent.infer_policies()
         action = agent.sample_action()
+        utils.print_obj_array(post_state, f"states")
+        utils.print_obj_array(post_policy, f"policies")
+
+        for f, s in enumerate(state):
+            state[f] = maths.sample(env_B[f][:, s, action[f]])
+
+        for g, _ in enumerate(obs):
+            obs[g] = maths.sample(env_A[g][:, state[0], state[1]])
