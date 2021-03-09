@@ -36,11 +36,10 @@ def update_policies_mmp(
         qs_seq = pi_qs_seq[idx]
 
         for t in range(horizon):
-            print(qs_seq[t].shape)
             qo_pi = get_expected_obs(qs_seq[t], A)
 
             if use_utility:
-                efe[idx] = efe[idx] + get_utility(qo_pi, C[t])
+                efe[idx] = efe[idx] + get_utility(qo_pi, C)
 
             if use_state_info_gain:
                 efe[idx] = efe[idx] + get_state_info_gain(qs_seq[t], A)
@@ -65,6 +64,8 @@ def get_expected_states(qs, B, policy):
 
 
 def get_expected_obs(qs_pi, A):
+    if not isinstance(qs_pi, list):
+        qs_pi = [qs_pi]
     num_steps = len(qs_pi)
     num_modalities = len(A)
 
@@ -84,7 +85,7 @@ def get_utility(qo_pi, C):
     for t in range(num_steps):
         for modality in range(num_modalities):
             lnC = np.log(softmax(C[modality][:, np.newaxis]) + 1e-16)
-            utility = utility + spm_dot(qo_pi[t][modality], lnC)
+            utility = utility + qo_pi[t][modality].dot(lnC)
 
     return utility
 

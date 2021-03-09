@@ -73,8 +73,8 @@ class Agent:
         return self.state_beliefs
 
     def infer_policies(self):
-        self.policy_beliefs, _ = control.update_policies(
-            self.state_beliefs[0][0], self.A, self.B, self.C, self.policies
+        self.policy_beliefs, _ = control.update_policies_mmp(
+            self.state_beliefs, self.A, self.B, self.C, self.policies
         )
         return self.policy_beliefs
 

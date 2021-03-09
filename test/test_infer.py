@@ -77,12 +77,9 @@ class TestInference(unittest.TestCase):
         for p_idx in range(num_policies):
             pi_qs_seq_future[p_idx] = pi_qs_seq[p_idx][(1 + past_len) :]
 
-        horizon = len(pi_qs_seq_future[0])
-        C = utils.obj_array(horizon)
-        for t in range(horizon):
-            C[t] = utils.obj_array(num_modalities)
-            for g in range(num_modalities):
-                C[t][g] = np.ones(num_obs[g])
+        C = utils.obj_array(num_modalities)
+        for g in range(num_modalities):
+            C[g] = np.ones(num_obs[g])
 
         q_pi, efe = update_policies_mmp(pi_qs_seq_future, A, B, C, policies)
 
