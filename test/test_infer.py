@@ -4,6 +4,7 @@ import numpy as np
 
 from pymdp import utils, maths
 from pymdp.infer import infer_states_mmp
+from pymdp.control import update_policies
 
 
 def rand_onehot_obs(num_obs):
@@ -25,7 +26,7 @@ def rand_controls(num_controls):
     return controls
 
 
-def rand_state_dist(num_states):
+def rand_dist(num_states):
     if type(num_states) is int:
         num_states = [num_states]
     states = utils.obj_array(len(num_states))
@@ -35,8 +36,7 @@ def rand_state_dist(num_states):
 
 
 class TestInference(unittest.TestCase):
-    def test_update_syayes(self):
-
+    def test_update_states(self):
         past_len, future_len, num_policies = 3, 4, 5
         num_states = [6, 7, 8]
         num_controls = [9, 10, 11]
@@ -51,9 +51,42 @@ class TestInference(unittest.TestCase):
             np.array([rand_controls(num_controls) for _ in range(future_len)])
             for _ in range(num_policies)
         ]
-        prior = rand_state_dist(num_states)
+        prior = rand_dist(num_states)
+
+        infer_states_mmp(A, B, prev_obs, policies, prev_actions, prior=prior)
+
+    def test_update_policies(self):
+        past_len, future_len, num_policies = 3, 4, 5
+        num_states = [6, 7, 8]
+        num_controls = [9, 10, 11]
+        num_obs = [12, 13, 14]
+        num_modalities = len(num_obs)
+
+        A = utils.rand_A_mat(num_obs, num_states)
+        B = utils.rand_B_mat(num_states, num_controls)
+        prev_obs = [rand_onehot_obs(num_obs) for _ in range(past_len)]
+        prev_actions = np.array([rand_controls(num_controls) for _ in range(past_len)])
+        policies = [
+            np.array([rand_controls(num_controls) for _ in range(future_len)])
+            for _ in range(num_policies)
+        ]
+        prior = rand_dist(num_states)
 
         pi_qs_seq, vfe = infer_states_mmp(A, B, prev_obs, policies, prev_actions, prior=prior)
+
+        pi_qs_seq_future = utils.obj_array(num_policies)
+        for p_idx in range(num_policies):
+            pi_qs_seq_future[p_idx] = pi_qs_seq[p_idx][(1 + past_len) :]
+
+        horizon = len(pi_qs_seq_future[0])
+        C = utils.obj_array(horizon)
+        for t in range(horizon):
+            C[t] = utils.obj_array(num_modalities)
+            for g in range(num_modalities):
+                C[t][g] = np.ones(num_obs[g]) 
+        
+        q_pi, efe = update_policies(pi_qs_seq_future, A, B, C, policies)
+
 
 if __name__ == "__main__":
     unittest.main()
