@@ -24,11 +24,10 @@ You can now use all classes and functions via `import pymdp`
 
 ## Getting started
 
-For an illustrative tutorial for how to use the functionalities of the `Agent` class, which is used to perform active inference using the core functionality of `pymdp`, we recommend
-going through the Jupyter notebooks in the `pymdp/examples/` folder. The `tmaze_demo.ipynb` is a good place to start, as it provides a step-by-step walkthrough on how to build an instance
-of `Agent`, sample observations from the generative process, and perform active inference. 
-
-THe `agent_demo.ipynb` notebook also provides a more stripped down implementation of how to build and encode a generative model in terms of straight `numpy` arrays.
+See the `pymdp/examples/` folder. For instance, run
+```python
+python -m examples.agent_demo
+```
 
 ## Contributing 
 
