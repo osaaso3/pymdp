@@ -1,6 +1,4 @@
 import itertools
-from typing import List
-
 import numpy as np
 
 from pymdp import utils
@@ -20,6 +18,32 @@ def update_policies(qs, A, B, C, policies, use_utility=True, use_state_info_gain
 
         if use_state_info_gain:
             efe[idx] = efe[idx] + get_state_info_gain(qs_pi, A)
+
+    q_pi = softmax(efe * gamma)
+    q_pi = q_pi / q_pi.sum(axis=0)
+
+    return q_pi, efe
+
+
+def update_policies_mmp(
+    pi_qs_seq, A, B, C, policies, use_utility=True, use_state_info_gain=False, gamma=16.0
+):
+    num_policies = len(policies)
+    horizon = len(pi_qs_seq[0])
+    efe = np.zeros(num_policies)
+
+    for idx, _ in enumerate(policies):
+        qs_seq = pi_qs_seq[idx]
+
+        for t in range(horizon):
+            print(qs_seq[t].shape)
+            qo_pi = get_expected_obs(qs_seq[t], A)
+
+            if use_utility:
+                efe[idx] = efe[idx] + get_utility(qo_pi, C[t])
+
+            if use_state_info_gain:
+                efe[idx] = efe[idx] + get_state_info_gain(qs_seq[t], A)
 
     q_pi = softmax(efe * gamma)
     q_pi = q_pi / q_pi.sum(axis=0)

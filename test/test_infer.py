@@ -4,7 +4,7 @@ import numpy as np
 
 from pymdp import utils, maths
 from pymdp.infer import infer_states_mmp
-from pymdp.control import update_policies
+from pymdp.control import update_policies_mmp
 
 
 def rand_onehot_obs(num_obs):
@@ -41,7 +41,6 @@ class TestInference(unittest.TestCase):
         num_states = [6, 7, 8]
         num_controls = [9, 10, 11]
         num_obs = [12, 13, 14]
-        num_modalities = len(num_obs)
 
         A = utils.rand_A_mat(num_obs, num_states)
         B = utils.rand_B_mat(num_states, num_controls)
@@ -72,7 +71,7 @@ class TestInference(unittest.TestCase):
         ]
         prior = rand_dist(num_states)
 
-        pi_qs_seq, vfe = infer_states_mmp(A, B, prev_obs, policies, prev_actions, prior=prior)
+        pi_qs_seq, _ = infer_states_mmp(A, B, prev_obs, policies, prev_actions, prior=prior)
 
         pi_qs_seq_future = utils.obj_array(num_policies)
         for p_idx in range(num_policies):
@@ -83,9 +82,9 @@ class TestInference(unittest.TestCase):
         for t in range(horizon):
             C[t] = utils.obj_array(num_modalities)
             for g in range(num_modalities):
-                C[t][g] = np.ones(num_obs[g]) 
-        
-        q_pi, efe = update_policies(pi_qs_seq_future, A, B, C, policies)
+                C[t][g] = np.ones(num_obs[g])
+
+        q_pi, efe = update_policies_mmp(pi_qs_seq_future, A, B, C, policies)
 
 
 if __name__ == "__main__":
