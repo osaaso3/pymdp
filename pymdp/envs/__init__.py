@@ -1,2 +1,2 @@
-from .env import Env
-from .mdp_env import MDPEnv
+from .base import Env
+from .pomdp import POMDPEnv

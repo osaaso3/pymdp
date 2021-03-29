@@ -11,9 +11,8 @@ from pymdp.utils import (
 )
 from pymdp.maths import norm_dist
 from pymdp.learning import update_A_dist, update_B_dist
-from pymdp.infer import infer_states_mmp, infer_states, InferType
+from pymdp.infer import average_over_policies, infer_states_mmp, infer_states, InferType
 from pymdp import control
-
 
 
 class Agent:
@@ -65,7 +64,8 @@ class Agent:
         self.lr = lr
 
         self.qs = None
-        self.policy_beliefs = None
+        self.qs_avg = None
+        self.q_pi = None
         self.obs_seq = []
         self.action_seq = []
 
@@ -83,21 +83,22 @@ class Agent:
             res = infer_states_mmp(self.A, self.B, self.obs_seq, self.policies, prior=self.prior)
             self.qs, _ = res
 
+            if self.q_pi is not None:
+                self.qs_avg = average_over_policies(self.qs, self.q_pi)
+
         elif self.infer_algo == InferType.FPI:
             self.qs = infer_states(self.A, self.B, obs, prior=self.prior)
 
-        return self.qs
+        return self.qs, self.qs_avg
 
     def infer_policies(self):
         if self.infer_algo == InferType.MMP:
-            self.policy_beliefs, _ = control.update_policies_mmp(
+            self.q_pi, _ = control.update_policies_mmp(
                 self.qs, self.A, self.B, self.C, self.policies
             )
         elif self.infer_algo == InferType.FPI:
-            self.policy_beliefs, _ = control.update_policies(
-                self.qs, self.A, self.B, self.C, self.policies
-            )
-        return self.policy_beliefs
+            self.q_pi, _ = control.update_policies(self.qs, self.A, self.B, self.C, self.policies)
+        return self.q_pi
 
     def infer_A(self, obs):
         self.pA = update_A_dist(self.pA, self.A, obs, self.qs, self.lr)
@@ -110,7 +111,7 @@ class Agent:
         return self.pB
 
     def sample_action(self):
-        return control.sample_action(self.policy_beliefs, self.policies, self.num_control)
+        return control.sample_action(self.q_pi, self.policies, self.num_control)
 
     def set_prior(self, prior=None):
         if prior is None:

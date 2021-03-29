@@ -1,12 +1,12 @@
 import numpy as np
 
 
-from pymdp.envs import Env
+from pymdp.envs.base import Env
 from pymdp import maths
 from pymdp.utils import get_model_dimensions
 
 
-class MDPEnv(Env):
+class POMDPEnv(Env):
     def __init__(self, A, B):
         self.A = A.copy()
         self.B = B.copy()

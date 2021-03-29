@@ -43,3 +43,18 @@ def infer_states(A, B, obs, prior=None):
 
     qs = fpi(A, B, obs, prior)
     return qs
+
+
+def average_over_policies(qs_pi, q_pi):
+    qs_pi = utils.to_obj_array(qs_pi)
+    q_pi = utils.to_obj_array(q_pi)
+
+    num_factors = len(qs_pi[0])
+    num_states = [qs_f.shape[0] for qs_f in qs_pi[0]]
+
+    qs_bma = utils.obj_array_zeros(num_states)
+    for p_idx, prob_pi in enumerate(q_pi[0]):
+        for f in range(num_factors):
+            ans = qs_pi[p_idx][f] * prob_pi
+            qs_bma[f] = qs_bma[f] + ans
+        return qs_bma

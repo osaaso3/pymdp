@@ -1,10 +1,9 @@
-import copy
 import numpy as np
 
-from pymdp import utils, maths
+from pymdp import utils, maths, infer
 from pymdp.agent import Agent
-from pymdp.infer import InferType
-from pymdp.envs import MDPEnv
+from pymdp.envs import POMDPEnv
+
 
 def construct_A(num_states, num_obs):
     A = utils.obj_array_zeros([[o] + num_states for o in num_obs])
@@ -52,17 +51,22 @@ if __name__ == "__main__":
     pA = A.copy()
     B = construct_B(num_states, num_factors, control_factors)
     C = construct_C(num_obs)
-    agent = Agent(A=A, B=B, C=C, pA=pA, control_factors=[1], policy_len=2, infer_algo=InferType.MMP)
+    agent = Agent(
+        A=A, B=B, C=C, pA=pA, control_factors=[1], policy_len=2, infer_algo=infer.InferType.MMP
+    )
 
-    init_state = [2 ,1]
-    env = MDPEnv(A, B)
+    init_state = [2, 1]
+    env = POMDPEnv(A, B)
     obs = env.reset()
 
     for t in range(num_steps):
-        state_belief = agent.infer_states(obs)
+        _, qs = agent.infer_states(obs)
         policy_belief = agent.infer_policies()
+
         action = agent.sample_action()
-        # agent.infer_A(obs)
+        #  agent.infer_A(obs)
+        print(f"\nstep {t} obs {obs} action {action}")
+        if qs is not None:
+            [[print(np.round(b, 2)) for b in belief] for belief in qs]
+
         obs = env.step(action)
-        
-        
