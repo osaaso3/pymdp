@@ -2,8 +2,8 @@ import numpy as np
 
 
 from pymdp.envs import Env
-from pymdp import maths
-from pymdp.utils import get_model_dimensions
+from pymdp.maths import sample, spm_dot
+from pymdp.utils import get_model_dimensions, onehot
 
 
 class MDPEnv(Env):
@@ -15,30 +15,30 @@ class MDPEnv(Env):
         self.obs = []
 
     def reset(self, states=None):
-        self.states = []
+    
+        self.states = utils.obj_array(self.num_factors)
         if states is None:
-            for ns in self.num_states:
-                state = np.random.randint(0, ns)
-                self.states.append(state)
+            for f, ns in enumerate(self.num_states):
+                state_idx = np.random.randint(0, ns)
+                self.states[f] = onehot(state_idx,ns)
         else:
             self.states = states
 
         self.obs = []
         for g, _ in enumerate(self.num_obs):
-            # TODO variable number of states
-            obs = maths.sample(self.A[g][:, self.states[0], self.states[1]])
+            obs = sample(spm_dot(self.A[g], self.states))
             self.obs.append(obs)
 
         return self.obs
 
     def step(self, action):
-        for f, s in enumerate(self.states):
-            self.states[f] = maths.sample(self.B[f][:, s, action[f]])
+        for f, ns in enumerate(self.num_states):
+            ps = self.B[f][:,:,action[f]].dot(self.states[f])
+            self.states[f] = onehot(maths.sample(ps), ns)
 
         self.obs = []
         for g, _ in enumerate(self.num_obs):
-            # TODO variable number of states
-            obs = maths.sample(self.A[g][:, self.states[0], self.states[1]])
+            obs = sample(spm_dot(self.A[g], self.states))
             self.obs.append(obs)
 
         return self.obs
