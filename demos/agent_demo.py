@@ -4,7 +4,7 @@ import numpy as np
 from pymdp import utils, maths
 from pymdp.agent import Agent
 from pymdp.infer import InferType
-
+from pymdp.envs import MDPEnv
 
 def construct_A(num_states, num_obs):
     A = utils.obj_array_zeros([[o] + num_states for o in num_obs])
@@ -49,29 +49,20 @@ if __name__ == "__main__":
     control_factors = [1]
 
     A = construct_A(num_states, num_obs)
+    pA = A.copy()
     B = construct_B(num_states, num_factors, control_factors)
     C = construct_C(num_obs)
-    agent = Agent(A=A, B=B, C=C, control_factors=[1], policy_len=2, infer_algo=InferType.MMP)
+    agent = Agent(A=A, B=B, C=C, pA=pA, control_factors=[1], policy_len=2, infer_algo=InferType.MMP)
 
-    env_A = copy.deepcopy(A)
-    env_B = copy.deepcopy(B)
-
-    obs = [2, 2, 0]
-    state = [0, 0]
+    init_state = [2 ,1]
+    env = MDPEnv(A, B)
+    obs = env.reset()
 
     for t in range(num_steps):
-        post_state = agent.infer_states(obs)
-        post_policy = agent.infer_policies()
+        state_belief = agent.infer_states(obs)
+        policy_belief = agent.infer_policies()
         action = agent.sample_action()
-        # utils.print_obj_array(post_state, f"states")
-        # utils.print_obj_array(post_policy, f"policies")
-
-        beliefs = utils.convert_to_namedtuple(post_state)
-        print(beliefs.policy[0])
-        print(beliefs.policy[1].time[1].factor[0])
-
-        for f, s in enumerate(state):
-            state[f] = maths.sample(env_B[f][:, s, action[f]])
-
-        for g, _ in enumerate(obs):
-            obs[g] = maths.sample(env_A[g][:, state[0], state[1]])
+        # agent.infer_A(obs)
+        obs = env.step(action)
+        
+        

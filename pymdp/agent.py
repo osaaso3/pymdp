@@ -9,8 +9,11 @@ from pymdp.utils import (
     rand_D_mat,
     get_model_dimensions,
 )
+from pymdp.maths import norm_dist
+from pymdp.learning import update_A_dist, update_B_dist
 from pymdp.infer import infer_states_mmp, infer_states, InferType
 from pymdp import control
+
 
 
 class Agent:
@@ -20,6 +23,8 @@ class Agent:
         B=None,
         C=None,
         D=None,
+        pA=None,
+        pB=None,
         policies=None,
         num_states=None,
         num_obs=None,
@@ -28,10 +33,13 @@ class Agent:
         infer_algo=InferType.MMP,
         infer_len=1,
         policy_len=1,
+        lr=0.01,
     ):
 
         self.A = rand_A_mat(num_obs, num_states) if A is None else to_obj_array(A)
         self.B = rand_B_mat(num_states, num_control) if B is None else to_obj_array(B)
+        self.pA = None if pA is None else to_obj_array(pA)
+        self.pB = None if pB is None else to_obj_array(pB)
 
         dims = get_model_dimensions(self.A, self.B)
         self.num_obs, self.num_states, self.num_modalities, self.num_factors = dims
@@ -50,15 +58,19 @@ class Agent:
             )
         else:
             self.policies = policies
-
         self.num_control = num_control
+
         self.infer_algo = infer_algo
         self.infer_len = infer_len
+        self.lr = lr
+
+        self.qs = None
+        self.policy_beliefs = None
         self.obs_seq = []
         self.action_seq = []
-        self.belief_state = None
 
     def reset(self):
+        self.qs = None
         self.obs_seq = []
         self.set_prior(self.D)
 
@@ -69,23 +81,33 @@ class Agent:
                 self.obs_seq = self.obs_seq[: self.infer_len]
 
             res = infer_states_mmp(self.A, self.B, self.obs_seq, self.policies, prior=self.prior)
-            self.state_beliefs, _ = res
+            self.qs, _ = res
 
         elif self.infer_algo == InferType.FPI:
-            self.state_beliefs = infer_states(self.A, self.B, obs, prior=self.prior)
+            self.qs = infer_states(self.A, self.B, obs, prior=self.prior)
 
-        return self.state_beliefs
+        return self.qs
 
     def infer_policies(self):
         if self.infer_algo == InferType.MMP:
             self.policy_beliefs, _ = control.update_policies_mmp(
-                self.state_beliefs, self.A, self.B, self.C, self.policies
+                self.qs, self.A, self.B, self.C, self.policies
             )
         elif self.infer_algo == InferType.FPI:
             self.policy_beliefs, _ = control.update_policies(
-                self.state_beliefs, self.A, self.B, self.C, self.policies
+                self.qs, self.A, self.B, self.C, self.policies
             )
         return self.policy_beliefs
+
+    def infer_A(self, obs):
+        self.pA = update_A_dist(self.pA, self.A, obs, self.qs, self.lr)
+        self.A = norm_dist(self.pA)
+        return self.pA
+
+    def infer_B(self, prev_qs):
+        self.pB = update_B_dist(self.pB, self.B, self.qs, prev_qs, self.lr)
+        self.B = norm_dist(self.pA)
+        return self.pB
 
     def sample_action(self):
         return control.sample_action(self.policy_beliefs, self.policies, self.num_control)
@@ -94,6 +116,6 @@ class Agent:
         if prior is None:
             prior = obj_array(len(self.policies))
             for p_idx, _ in enumerate(self.policies):
-                prior[p_idx] = copy.deepcopy(self.state_beliefs[p_idx][0])
+                prior[p_idx] = copy.deepcopy(self.qs[p_idx][0])
         self.prior = prior
         return self.prior

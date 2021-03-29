@@ -1,3 +1,4 @@
+from itertools import chain
 import numpy as np
 
 from pymdp import utils
@@ -7,23 +8,38 @@ EPS = 1e-16
 
 def spm_dot(X, x, dims_to_omit=None):
     if utils.is_obj_array(x):
-        dims = (np.arange(0, len(x)) + X.ndim - len(x)).astype(int)
+        dims = list(range(X.ndim - len(x), len(x) + X.ndim - len(x)))
     else:
-        dims = np.array([1], dtype=int)
+        dims = [1]
         x = utils.to_obj_array(x)
 
     if dims_to_omit is not None:
-        dims = np.delete(dims, dims_to_omit)
-        x = np.empty([0], dtype=object) if len(x) == 1 else np.delete(x, dims_to_omit)
+        arg_list = (
+            [X, list(range(X.ndim))]
+            + list(
+                chain(
+                    *(
+                        [x[xdim_i], [dims[xdim_i]]]
+                        for xdim_i in range(len(x))
+                        if xdim_i not in dims_to_omit
+                    )
+                )
+            )
+            + [dims_to_omit]
+        )
+    else:
+        arg_list = (
+            [X, list(range(X.ndim))]
+            + list(chain(*([x[xdim_i], [dims[xdim_i]]] for xdim_i in range(len(x)))))
+            + [[0]]
+        )
 
-    for d in range(len(x)):
-        s = np.ones(np.ndim(X), dtype=int)
-        s[dims[d]] = np.shape(x[d])[0]
-        X = X * x[d].reshape(tuple(s))
+    Y = np.einsum(*arg_list)
 
-    Y = np.sum(X, axis=tuple(dims.astype(int))).squeeze()
     if np.prod(Y.shape) <= 1.0:
-        Y = np.array([Y.item()]).astype("float64")
+        Y = Y.item()
+        Y = np.array([Y]).astype("float64")
+
     return Y
 
 

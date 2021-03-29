@@ -1,13 +1,6 @@
-from collections import namedtuple
-
 import numpy as np
 
 from pymdp import maths
-
-PolicyTimeFactorBeliefs = namedtuple("PolicyTimeBelief", ["policy"])
-TimeFactorBeliefs = namedtuple("TimeFactorBelief", ["time"])
-FactorBeliefs = namedtuple("FactorBelief", ["factor"])
-Beliefs = namedtuple("Belief", ["belief"])
 
 
 def obj_array(num_arr):
@@ -142,19 +135,3 @@ def process_obs(obs, num_modalities, num_obs):
             obs_arr[m] = onehot(obs[m], num_obs[m])
         obs = obs_arr
     return obs
-
-
-def convert_to_namedtuple(pi_qs_seq):
-    beliefs = PolicyTimeFactorBeliefs([])
-    for _, policy in enumerate(pi_qs_seq):
-        _policy = TimeFactorBeliefs([])
-        for _, time in enumerate(policy):
-            _time = FactorBeliefs([])
-            for _, factor in enumerate(time):
-                _factor = Beliefs([])
-                for _, belief in enumerate(factor):
-                    _factor.belief.append(belief)
-                _time.factor.append(_factor)
-            _policy.time.append(_time)
-        beliefs.policy.append(_policy)
-    return beliefs
