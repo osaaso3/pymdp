@@ -66,7 +66,5 @@ if __name__ == "__main__":
         action = agent.sample_action()
         #  agent.infer_A(obs)
         print(f"\nstep {t} obs {obs} action {action}")
-        if qs is not None:
-            [[print(np.round(b, 2)) for b in belief] for belief in qs]
-
+    
         obs = env.step(action)

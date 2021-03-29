@@ -57,4 +57,4 @@ def average_over_policies(qs_pi, q_pi):
         for f in range(num_factors):
             ans = qs_pi[p_idx][f] * prob_pi
             qs_bma[f] = qs_bma[f] + ans
-        return qs_bma
+    return qs_bma
