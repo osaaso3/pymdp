@@ -78,7 +78,7 @@ class Agent:
         if self.infer_algo == InferType.MMP:
             self.obs_seq.append(obs)
             if len(self.obs_seq) > self.infer_len:
-                self.obs_seq = self.obs_seq[: self.infer_len]
+                self.obs_seq = self.obs_seq[-self.infer_len:] # should be getting the _last_ `infer_len` observations - not the first `infer_len` observations
 
             res = infer_states_mmp(self.A, self.B, self.obs_seq, self.policies, prior=self.prior)
             self.qs, _ = res
@@ -117,6 +117,9 @@ class Agent:
         if prior is None:
             prior = obj_array(len(self.policies))
             for p_idx, _ in enumerate(self.policies):
-                prior[p_idx] = copy.deepcopy(self.qs[p_idx][0])
+                prior[p_idx] = copy.deepcopy(self.qs[p_idx][0]) 
+                # this is the policy-distingiushed empirical prior from the past - we also need the option to Bayesian model average the penultimate belief
+                # (t - self.infer_len - 1) across policies and allow user option to have that be the prior at the beginning of each epoch. This way it will
+                # be more like the D matrix (not policy conditional)
         self.prior = prior
         return self.prior
